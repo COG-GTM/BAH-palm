@@ -3,9 +3,9 @@
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
   "version": 1,
-  "serialNumber": "urn:uuid:1f6e2bd4-5016-4417-a079-3d71bdaef112",
+  "serialNumber": "urn:uuid:aba04ee2-a45f-4c16-be91-d21028178127",
   "metadata": {
-    "timestamp": "2026-08-12T20:13:29.514Z",
+    "timestamp": "2026-08-12T20:19:06.443Z",
     "tools": {
       "components": [
         {
@@ -1655,8 +1655,8 @@
       "type": "library",
       "name": "client",
       "group": "@trpc",
-      "version": "11.1.2",
-      "bom-ref": "palm@1.2.0|@trpc/client@11.1.2",
+      "version": "11.18.0",
+      "bom-ref": "palm@1.2.0|@trpc/client@11.18.0",
       "author": "KATT",
       "description": "The tRPC client library",
       "licenses": [
@@ -1667,7 +1667,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40trpc/client@11.1.2",
+      "purl": "pkg:npm/%40trpc/client@11.18.0",
       "externalReferences": [
         {
           "url": "git+https://github.com/trpc/trpc.git#packages/client",
@@ -1685,7 +1685,7 @@
           "comment": "as detected from PackageJson property \"bugs.url\""
         },
         {
-          "url": "https://registry.npmjs.org/@trpc/client/-/client-11.1.2.tgz",
+          "url": "https://registry.npmjs.org/@trpc/client/-/client-11.18.0.tgz",
           "type": "distribution",
           "comment": "as detected from npm-ls property \"resolved\""
         }
@@ -1701,8 +1701,8 @@
       "type": "library",
       "name": "next",
       "group": "@trpc",
-      "version": "11.1.2",
-      "bom-ref": "palm@1.2.0|@trpc/next@11.1.2",
+      "version": "11.18.0",
+      "bom-ref": "palm@1.2.0|@trpc/next@11.18.0",
       "author": "KATT",
       "description": "The tRPC Next.js library",
       "licenses": [
@@ -1713,7 +1713,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40trpc/next@11.1.2",
+      "purl": "pkg:npm/%40trpc/next@11.18.0",
       "externalReferences": [
         {
           "url": "git+https://github.com/trpc/trpc.git#packages/next",
@@ -1731,7 +1731,7 @@
           "comment": "as detected from PackageJson property \"bugs.url\""
         },
         {
-          "url": "https://registry.npmjs.org/@trpc/next/-/next-11.1.2.tgz",
+          "url": "https://registry.npmjs.org/@trpc/next/-/next-11.18.0.tgz",
           "type": "distribution",
           "comment": "as detected from npm-ls property \"resolved\""
         }
@@ -1747,8 +1747,8 @@
       "type": "library",
       "name": "react-query",
       "group": "@trpc",
-      "version": "11.1.2",
-      "bom-ref": "palm@1.2.0|@trpc/react-query@11.1.2",
+      "version": "11.18.0",
+      "bom-ref": "palm@1.2.0|@trpc/react-query@11.18.0",
       "author": "KATT",
       "description": "The tRPC React library",
       "licenses": [
@@ -1759,7 +1759,7 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40trpc/react-query@11.1.2",
+      "purl": "pkg:npm/%40trpc/react-query@11.18.0",
       "externalReferences": [
         {
           "url": "git+https://github.com/trpc/trpc.git#packages/react",
@@ -1777,7 +1777,7 @@
           "comment": "as detected from PackageJson property \"bugs.url\""
         },
         {
-          "url": "https://registry.npmjs.org/@trpc/react-query/-/react-query-11.1.2.tgz",
+          "url": "https://registry.npmjs.org/@trpc/react-query/-/react-query-11.18.0.tgz",
           "type": "distribution",
           "comment": "as detected from npm-ls property \"resolved\""
         }
@@ -72869,9 +72869,9 @@
         "palm@1.2.0|@testing-library/jest-dom@6.6.3",
         "palm@1.2.0|@testing-library/react@16.3.0",
         "palm@1.2.0|@testing-library/user-event@14.6.1",
-        "palm@1.2.0|@trpc/client@11.1.2",
-        "palm@1.2.0|@trpc/next@11.1.2",
-        "palm@1.2.0|@trpc/react-query@11.1.2",
+        "palm@1.2.0|@trpc/client@11.18.0",
+        "palm@1.2.0|@trpc/next@11.18.0",
+        "palm@1.2.0|@trpc/react-query@11.18.0",
         "palm@1.2.0|@trpc/server@11.18.0",
         "palm@1.2.0|@types/bcryptjs@2.4.6",
         "palm@1.2.0|@types/formidable@3.4.5",
@@ -73229,18 +73229,18 @@
       ]
     },
     {
-      "ref": "palm@1.2.0|@trpc/client@11.1.2",
+      "ref": "palm@1.2.0|@trpc/client@11.18.0",
       "dependsOn": [
         "palm@1.2.0|@trpc/server@11.18.0",
         "palm@1.2.0|typescript@5.8.3"
       ]
     },
     {
-      "ref": "palm@1.2.0|@trpc/next@11.1.2",
+      "ref": "palm@1.2.0|@trpc/next@11.18.0",
       "dependsOn": [
         "palm@1.2.0|@tanstack/react-query@5.75.5",
-        "palm@1.2.0|@trpc/client@11.1.2",
-        "palm@1.2.0|@trpc/react-query@11.1.2",
+        "palm@1.2.0|@trpc/client@11.18.0",
+        "palm@1.2.0|@trpc/react-query@11.18.0",
         "palm@1.2.0|@trpc/server@11.18.0",
         "palm@1.2.0|next@15.5.23",
         "palm@1.2.0|react-dom@19.1.0",
@@ -73249,12 +73249,11 @@
       ]
     },
     {
-      "ref": "palm@1.2.0|@trpc/react-query@11.1.2",
+      "ref": "palm@1.2.0|@trpc/react-query@11.18.0",
       "dependsOn": [
         "palm@1.2.0|@tanstack/react-query@5.75.5",
-        "palm@1.2.0|@trpc/client@11.1.2",
+        "palm@1.2.0|@trpc/client@11.18.0",
         "palm@1.2.0|@trpc/server@11.18.0",
-        "palm@1.2.0|react-dom@19.1.0",
         "palm@1.2.0|react@19.1.0",
         "palm@1.2.0|typescript@5.8.3"
       ]
