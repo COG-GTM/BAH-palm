@@ -1,4 +1,13 @@
 import '@testing-library/jest-dom';
+import { TextDecoder, TextEncoder } from 'util';
+
+// jsdom does not provide these web globals, which @aws-sdk requires
+global.TextEncoder = global.TextEncoder ?? TextEncoder;
+global.TextDecoder = global.TextDecoder ?? TextDecoder;
+const webStreams = require('stream/web');
+global.TransformStream = global.TransformStream ?? webStreams.TransformStream;
+global.ReadableStream = global.ReadableStream ?? webStreams.ReadableStream;
+global.WritableStream = global.WritableStream ?? webStreams.WritableStream;
 
 // Workaround to avoid warnings in the console about element.ref was removed in React 19
 // TODO Remove this when Mantine is updated 

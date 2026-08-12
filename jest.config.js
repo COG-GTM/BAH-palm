@@ -33,6 +33,11 @@ const customJestConfig = {
     '^tiktoken$': '<rootDir>/__mocks__/tiktoken.ts',
   },
   testEnvironment: 'jest-environment-jsdom',
+  // Prefer node export conditions so node-only packages like @aws-sdk
+  // don't resolve to their browser builds under jsdom
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'require', 'default'],
+  },
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
