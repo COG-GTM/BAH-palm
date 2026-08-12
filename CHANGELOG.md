@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Remediated all Critical/High severity CVEs with available fixes via dependency upgrades (next, next-auth, axios, fast-xml-parser, @trpc/server, and transitive packages) [#1](https://github.com/COG-GTM/BAH-palm/pull/1)
+
 ## PALM v1.2.0 - 2025-10-07
 
 ### Added
