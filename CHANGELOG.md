@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Speed up the AI provider usage analytics report and CSV export by aggregating usage records in a single pass [#2](https://github.com/COG-GTM/BAH-palm/pull/2)
+
 ### Deprecated
 
 ### Removed
