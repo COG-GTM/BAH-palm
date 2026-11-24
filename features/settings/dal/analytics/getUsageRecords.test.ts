@@ -225,5 +225,10 @@ describe('getUsageRecords', () => {
     expect(sql).not.toContain('filtered_usage_costs');
     expect(sql).toMatch(/provider_aggregates[\s\S]*FROM\s+model_aggregates/);
     expect(sql).toMatch(/total_cost AS \(\s*SELECT SUM\("totalCost"\) AS "totalCost"\s*FROM model_aggregates/);
+    // Provider averages must stay per usage row (what AVG over the rows returned), not per model
+    expect(sql).toContain('COUNT(*) AS "usageCount"');
+    expect(sql).toContain('SUM("sumCostPerInputToken") / SUM("usageCount")::float8 AS "costPerInputToken"');
+    expect(sql).toContain('SUM("sumCostPerOutputToken") / SUM("usageCount")::float8 AS "costPerOutputToken"');
+    expect(sql).not.toMatch(/AVG\(/);
   });
 });
