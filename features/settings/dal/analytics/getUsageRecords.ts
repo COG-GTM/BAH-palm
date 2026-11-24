@@ -119,19 +119,20 @@ export default async function getUsageRecords(
 
   let totalCost: number | null = null;
   try {
+    // Aggregate the usage rows once, at the provider + model grain, and roll the
+    // provider and overall totals up from those few rows. Reading the raw rows
+    // through a shared CTE materializes every matching row and scans it three times.
     const rawRecords = await db.$queryRaw<any[]>`
-      WITH filtered_usage_costs AS (
-
-        -- Perform initial cost calculations
+      WITH model_aggregates AS (
         SELECT
             "apu"."aiProviderId",
             "ap"."label" AS "aiProviderLabel",
             "apu"."modelId",
             "m"."name" AS "modelLabel",
-            "apu"."costPerInputToken",
-            "apu"."costPerOutputToken",
-            ("apu"."inputTokensUsed" * "apu"."costPerInputToken") AS "inputCost",
-            ("apu"."outputTokensUsed" * "apu"."costPerOutputToken") AS "outputCost"
+            SUM(("apu"."inputTokensUsed" * "apu"."costPerInputToken") + ("apu"."outputTokensUsed" * "apu"."costPerOutputToken")) AS "totalCost",
+            SUM("apu"."costPerInputToken") AS "sumCostPerInputToken",
+            SUM("apu"."costPerOutputToken") AS "sumCostPerOutputToken",
+            COUNT(*) AS "usageCount"
         FROM
             "AiProviderUsage" apu
         LEFT JOIN
@@ -141,38 +142,27 @@ export default async function getUsageRecords(
 
         -- Apply filters for AI provider, model and time period
         ${whereClause}
-      ),
-
-      model_aggregates AS (
-        SELECT
-            "aiProviderId",
-            "aiProviderLabel",
-            "modelId",
-            "modelLabel",
-            SUM("inputCost" + "outputCost") AS "totalCost"
-        FROM
-            "filtered_usage_costs"
         GROUP BY
-            "aiProviderId", "aiProviderLabel", "modelId", "modelLabel"
+            "apu"."aiProviderId", "ap"."label", "apu"."modelId", "m"."name"
       ),
 
       provider_aggregates AS (
         SELECT
             "aiProviderId",
             "aiProviderLabel",
-            AVG("costPerInputToken") AS "costPerInputToken",
-            AVG("costPerOutputToken") AS "costPerOutputToken",
-            SUM("inputCost" + "outputCost") AS "totalCost"
+            SUM("sumCostPerInputToken") / SUM("usageCount")::float8 AS "costPerInputToken",
+            SUM("sumCostPerOutputToken") / SUM("usageCount")::float8 AS "costPerOutputToken",
+            SUM("totalCost") AS "totalCost"
         FROM
-            "filtered_usage_costs"
+            model_aggregates
         GROUP BY
             "aiProviderId", "aiProviderLabel"
       ),
 
       -- Only calculate the total cost once
       total_cost AS (
-        SELECT SUM("inputCost" + "outputCost") AS "totalCost"
-        FROM "filtered_usage_costs"
+        SELECT SUM("totalCost") AS "totalCost"
+        FROM model_aggregates
       )
 
       SELECT

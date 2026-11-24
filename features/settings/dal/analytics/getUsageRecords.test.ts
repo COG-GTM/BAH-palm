@@ -213,4 +213,17 @@ describe('getUsageRecords', () => {
       mockError
     );
   });
+
+  it('should aggregate usage rows in a single pass over AiProviderUsage', async () => {
+    (db.$queryRaw as jest.Mock).mockResolvedValue([]);
+    (db.aiProvider.findMany as jest.Mock).mockResolvedValue([]);
+
+    await getUsageRecords(InitiatedBy.Any, 'all', 'all', TimeRange.Year);
+
+    const sql = ((db.$queryRaw as jest.Mock).mock.calls[0][0] as string[]).join('');
+    expect(sql.match(/"AiProviderUsage"/g)).toHaveLength(1);
+    expect(sql).not.toContain('filtered_usage_costs');
+    expect(sql).toMatch(/provider_aggregates[\s\S]*FROM\s+model_aggregates/);
+    expect(sql).toMatch(/total_cost AS \(\s*SELECT SUM\("totalCost"\) AS "totalCost"\s*FROM model_aggregates/);
+  });
 });
