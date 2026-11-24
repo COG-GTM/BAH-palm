@@ -1,6 +1,7 @@
 import db from '@/server/db';
 import logger from '@/server/logger';
 import { InitiatedBy, TimeRange } from '@/features/settings/types/analytics';
+import { Prisma } from '@prisma/client';
 import getUsageRecords from './getUsageRecords';
 
 jest.mock('@prisma/client');
@@ -224,11 +225,18 @@ describe('getUsageRecords', () => {
     expect(sql.match(/"AiProviderUsage"/g)).toHaveLength(1);
     expect(sql).not.toContain('filtered_usage_costs');
     expect(sql).toMatch(/provider_aggregates[\s\S]*FROM\s+model_aggregates/);
-    expect(sql).toMatch(/total_cost AS \(\s*SELECT SUM\("totalCost"\) AS "totalCost"\s*FROM model_aggregates/);
+    expect(sql).toMatch(/total_cost AS \(\s*SELECT SUM\("totalCost"\)::float8 AS "totalCost"\s*FROM model_aggregates/);
+    const whereSql = ((Prisma.sql as jest.Mock).mock.calls[0][0] as string[]).join('');
+    expect(whereSql).toContain('"apu"."timestamp" >= (SELECT NOW() - CAST(');
+    expect(whereSql).not.toContain(' OR ');
     // Provider averages must stay per usage row (what AVG over the rows returned), not per model
     expect(sql).toContain('COUNT(*) AS "usageCount"');
-    expect(sql).toContain('SUM("sumCostPerInputToken") / SUM("usageCount")::float8 AS "costPerInputToken"');
-    expect(sql).toContain('SUM("sumCostPerOutputToken") / SUM("usageCount")::float8 AS "costPerOutputToken"');
+    expect(sql).toContain('(SUM("sumCostPerInputToken") / SUM("usageCount"))::float8 AS "costPerInputToken"');
+    expect(sql).toContain('(SUM("sumCostPerOutputToken") / SUM("usageCount"))::float8 AS "costPerOutputToken"');
+    // Token counts are summed per rate and priced once, so totals do not depend on row order
+    expect(sql).toContain('SUM("apu"."inputTokensUsed") AS "inputTokensUsed"');
+    expect(sql).toMatch(/GROUP BY\s+"apu"\."aiProviderId", "apu"\."modelId", "apu"\."costPerInputToken", "apu"\."costPerOutputToken"/);
+    expect(sql).toMatch(/"ra"\."inputTokensUsed"::numeric \* "ra"\."costPerInputToken"::numeric\s*\+ "ra"\."outputTokensUsed"::numeric \* "ra"\."costPerOutputToken"::numeric/);
     expect(sql).not.toMatch(/AVG\(/);
   });
 });

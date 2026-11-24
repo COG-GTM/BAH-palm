@@ -49,20 +49,9 @@ export default async function getUsageRecords(
 
   let whereClause = Prisma.sql`
     WHERE
-      (
-      -- Parameterized variables cannot be used for INTERVALs in Prisma
-        (
-            ${interval} = '24 hours' AND "apu"."timestamp" >= NOW() - INTERVAL '24 hours'
-        ) OR (
-            ${interval} = '7 days' AND "apu"."timestamp" >= NOW() - INTERVAL '7 days'
-        ) OR (
-            ${interval} = '30 days' AND "apu"."timestamp" >= NOW() - INTERVAL '30 days'
-        ) OR (
-            ${interval} = '365 days' AND "apu"."timestamp" >= NOW() - INTERVAL '365 days'
-        )
-      )
-      AND "ap"."deletedAt" IS NULL
-      AND "m"."deletedAt" IS NULL
+      -- One range predicate keeps row estimates sane when Postgres reuses a generic plan;
+      -- the sub-select computes the cutoff once instead of once per row
+      "apu"."timestamp" >= (SELECT NOW() - CAST(${interval} AS INTERVAL))
   `;
 
   if (initiatedBy === InitiatedBy.User) {
@@ -119,40 +108,62 @@ export default async function getUsageRecords(
 
   let totalCost: number | null = null;
   try {
-    // Aggregate the usage rows once, at the provider + model grain, and roll the
-    // provider and overall totals up from those few rows. Reading the raw rows
+    // Aggregate the usage rows once, by provider, model and token rates, then roll the
+    // model, provider and overall totals up from those few rows. Reading the raw rows
     // through a shared CTE materializes every matching row and scans it three times.
+    // Token counts are summed exactly, so the totals do not depend on row order.
     const rawRecords = await db.$queryRaw<any[]>`
-      WITH model_aggregates AS (
+      WITH rate_aggregates AS (
         SELECT
             "apu"."aiProviderId",
-            "ap"."label" AS "aiProviderLabel",
             "apu"."modelId",
-            "m"."name" AS "modelLabel",
-            SUM(("apu"."inputTokensUsed" * "apu"."costPerInputToken") + ("apu"."outputTokensUsed" * "apu"."costPerOutputToken")) AS "totalCost",
-            SUM("apu"."costPerInputToken") AS "sumCostPerInputToken",
-            SUM("apu"."costPerOutputToken") AS "sumCostPerOutputToken",
+            "apu"."costPerInputToken",
+            "apu"."costPerOutputToken",
+            SUM("apu"."inputTokensUsed") AS "inputTokensUsed",
+            SUM("apu"."outputTokensUsed") AS "outputTokensUsed",
             COUNT(*) AS "usageCount"
         FROM
             "AiProviderUsage" apu
-        LEFT JOIN
-            "AiProvider" ap ON "apu"."aiProviderId" = "ap"."id"
-        LEFT JOIN
-            "Model" m ON "apu"."modelId" = "m"."id"
 
         -- Apply filters for AI provider, model and time period
         ${whereClause}
         GROUP BY
-            "apu"."aiProviderId", "ap"."label", "apu"."modelId", "m"."name"
+            "apu"."aiProviderId", "apu"."modelId", "apu"."costPerInputToken", "apu"."costPerOutputToken"
+      ),
+
+      model_aggregates AS (
+        SELECT
+            "ra"."aiProviderId",
+            "ap"."label" AS "aiProviderLabel",
+            "ra"."modelId",
+            "m"."name" AS "modelLabel",
+            SUM(
+              "ra"."inputTokensUsed"::numeric * "ra"."costPerInputToken"::numeric
+              + "ra"."outputTokensUsed"::numeric * "ra"."costPerOutputToken"::numeric
+            ) AS "totalCost",
+            SUM("ra"."costPerInputToken"::numeric * "ra"."usageCount") AS "sumCostPerInputToken",
+            SUM("ra"."costPerOutputToken"::numeric * "ra"."usageCount") AS "sumCostPerOutputToken",
+            SUM("ra"."usageCount") AS "usageCount"
+        FROM
+            rate_aggregates ra
+        LEFT JOIN
+            "AiProvider" ap ON "ra"."aiProviderId" = "ap"."id"
+        LEFT JOIN
+            "Model" m ON "ra"."modelId" = "m"."id"
+        WHERE
+            "ap"."deletedAt" IS NULL
+            AND "m"."deletedAt" IS NULL
+        GROUP BY
+            "ra"."aiProviderId", "ap"."label", "ra"."modelId", "m"."name"
       ),
 
       provider_aggregates AS (
         SELECT
             "aiProviderId",
             "aiProviderLabel",
-            SUM("sumCostPerInputToken") / SUM("usageCount")::float8 AS "costPerInputToken",
-            SUM("sumCostPerOutputToken") / SUM("usageCount")::float8 AS "costPerOutputToken",
-            SUM("totalCost") AS "totalCost"
+            (SUM("sumCostPerInputToken") / SUM("usageCount"))::float8 AS "costPerInputToken",
+            (SUM("sumCostPerOutputToken") / SUM("usageCount"))::float8 AS "costPerOutputToken",
+            SUM("totalCost")::float8 AS "totalCost"
         FROM
             model_aggregates
         GROUP BY
@@ -161,7 +172,7 @@ export default async function getUsageRecords(
 
       -- Only calculate the total cost once
       total_cost AS (
-        SELECT SUM("totalCost") AS "totalCost"
+        SELECT SUM("totalCost")::float8 AS "totalCost"
         FROM model_aggregates
       )
 
@@ -173,7 +184,7 @@ export default async function getUsageRecords(
         "pa"."totalCost" AS "providerTotalCost",
         "ma"."modelId",
         "ma"."modelLabel",
-        "ma"."totalCost" AS "modelTotalCost",
+        "ma"."totalCost"::float8 AS "modelTotalCost",
         "tc"."totalCost" AS "overallTotalCost"
       FROM
         provider_aggregates pa
